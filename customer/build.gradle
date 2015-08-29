@@ -1,0 +1,59 @@
+apply plugin: 'application'
+apply plugin: 'java'
+apply plugin: 'spring-boot'
+
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies { 
+   classpath 'org.springframework.boot:spring-boot-gradle-plugin:1.2.0.RELEASE'
+  }
+}
+
+repositories { 
+  jcenter()
+}
+
+sourceSets {
+  integrationTest {
+    java {
+      compileClasspath += main.output + test.output
+      runtimeClasspath += main.output + test.output
+      srcDir file('src/integration-test/java')
+    }
+    resources.srcDir file('src/integration-test/resources')
+  }
+}
+
+configurations {
+  integrationTestCompile.extendsFrom testCompile
+  integrationTestRuntime.extendsFrom testRuntime
+}
+
+dependencies {
+  // long form: compile group: "org.springframework.boot", name: "spring-boot-starter-actuator", version: "..."
+  compile "org.springframework.boot:spring-boot-starter-actuator"
+  compile "org.springframework.boot:spring-boot-starter-web"
+  compile "org.springframework.boot:spring-boot-starter-data-jpa"
+  compile 'com.h2database:h2:1.4.184'
+  compile 'log4j:log4j:1.2.17'
+  // testCompile 'junit:junit:4.11'
+  testCompile 'org.springframework:spring-test:2.5'
+  testCompile 'org.assertj:assertj-core:3.0.0'
+  testCompile "org.springframework.boot:spring-boot-starter-test" 
+  integrationTestCompile "org.springframework.boot:spring-boot-starter-test" 
+}
+
+task integrationTest(type: Test) {
+    testClassesDir = sourceSets.integrationTest.output.classesDir
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    outputs.upToDateWhen { false } // Tell Gradle that the outputs of the integrationTest task should always be considered out of date so it is always executed.
+}
+
+check.dependsOn integrationTest
+integrationTest.mustRunAfter test
+
+tasks.withType(Test) {
+    reports.html.destination = file("${reporting.baseDir}/${name}")
+}
