@@ -10,13 +10,14 @@ import org.springframework.context.annotation.ComponentScan;
 public class Main {
     public static void main(String[] args) {
         ApplicationContext ctx = SpringApplication.run(Main.class);
-	// CustomerModel customer = new CustomerModel();
-	// customer.setCustomerId("c680494");
-	// customer.setCustomerName("Craig Jackson");
-	// CustomerRepo repo = ctx.getBean(CustomerRepo.class);
-	// repo.save(customer);
-	// for (CustomerModel model : repo.findAll()) {
-	//     System.out.println(model.getCustomerId());
-	// }
+	CustomerModel customer = new CustomerModel();
+	customer.setCustomerName("Craig Jackson");
+	customer.setContactEmail("poo@gmail.com");
+	customer.setContactPhone("555-5455");
+	CustomerRepo repo = ctx.getBean(CustomerRepo.class);
+	repo.save(customer);
+	for (CustomerModel model : repo.findAll()) {
+	     System.out.println(model.getCustomerId());
+	}
     }
 }
