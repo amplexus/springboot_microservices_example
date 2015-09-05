@@ -4,7 +4,10 @@ apply plugin: 'spring-boot'
 
 buildscript {
   repositories {
-    jcenter()
+    maven {
+      url "http://craigiebabe.net:9081/nexus/content/groups/public"
+    }
+    // jcenter()
   }
   dependencies { 
    classpath 'org.springframework.boot:spring-boot-gradle-plugin:1.2.0.RELEASE'
