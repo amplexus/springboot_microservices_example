@@ -1,6 +1,10 @@
 apply plugin: 'application'
 apply plugin: 'java'
 apply plugin: 'spring-boot'
+apply plugin: 'maven'
+
+group = 'org.amplexus.springboot.demo'
+version = '1.0.0-SNAPSHOT'
 
 buildscript {
   repositories {
@@ -49,6 +53,19 @@ dependencies {
   testCompile 'org.assertj:assertj-core:3.0.0'
   testCompile "org.springframework.boot:spring-boot-starter-test" 
   integrationTestCompile "org.springframework.boot:spring-boot-starter-test" 
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: "${nexusUrl}/content/repositories/releases") {
+                authentication(userName: nexusUsername, password: nexusPassword)
+            }
+            snapshotRepository(url: "${nexusUrl}/content/repositories/snapshots") {
+                authentication(userName: nexusUsername, password: nexusPassword)
+            }
+        }
+    }
 }
 
 task integrationTest(type: Test) {
