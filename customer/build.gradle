@@ -74,8 +74,8 @@ task integrationTest(type: Test) {
     outputs.upToDateWhen { false } // Tell Gradle that the outputs of the integrationTest task should always be considered out of date so it is always executed.
 }
 
-check.dependsOn integrationTest
-integrationTest.mustRunAfter test
+// check.dependsOn integrationTest
+// integrationTest.mustRunAfter test
 
 tasks.withType(Test) {
     reports.html.destination = file("${reporting.baseDir}/${name}")
