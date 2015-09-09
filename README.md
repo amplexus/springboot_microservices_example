@@ -1,6 +1,29 @@
 # springboot_microservices_example
 An example project illustrating a simple microservices implementation
 
+Todo:
+- Integration testing:
+  - gradle command line supports hostname argument for integration testing
+  - launches vm based on GCE immutable images to speed environment standup
+  - runs integration test against instantiated vm 
+- Telstra workflow:
+  - basic build and test
+  - static code analysis - if basic build and test succeeds
+  - deploy to dev - if static code analysis succeeds
+  - run acceptance tests in dev - if deploy to dev succeeds
+  - run regression tests in dev - if acceptance tests succeed
+  - run performance tests in dev - if regression tests succeed
+  - deploy to SQI - if performance tests in dev succeed
+  - run regression test in SQI - if deploy to SQI succeeds
+  - deploy to UAT - if system tester approves regression tests in SQI
+  - run regression test in UAT - if deploy to UAT succeeds
+  - deploy to SVT - if QA and product owner approve integration test 
+  - run performance test in SVT - if deploy to SVT succeeds
+  - deploy to pre-prod - if performance engineer approves performance tests
+  - deploy to production - if ops and product owner and technology manager approves
+- Use of Nexus
+  - TBD
+
 microservices:
 - responsible for single domain functionality vs soa handling cross domain functionality
 - distributed systems:
