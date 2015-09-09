@@ -3,9 +3,13 @@ An example project illustrating a simple microservices implementation
 
 Todo:
 - Integration testing:
-  - gradle command line supports hostname argument for integration testing
+  - gradle command line supports target hostname argument for integration testing
   - launches vm based on GCE immutable images to speed environment standup
   - runs integration test against instantiated vm 
+- Performance testing:
+  - gradle command line supports target hostname argument for performance testing
+  - launches vm based on GCE immutable images to speed environment standup
+  - runs performance test against instantiated vm 
 - Telstra workflow:
   - basic build and test
   - static code analysis - if basic build and test succeeds
@@ -19,7 +23,7 @@ Todo:
   - run regression test in UAT - if deploy to UAT succeeds
   - deploy to SVT - if QA and product owner approve integration test 
   - run performance test in SVT - if deploy to SVT succeeds
-  - deploy to pre-prod - if performance engineer approves performance tests
+  - deploy to pre-prod - if performance engineer and technology manager approve performance tests
   - deploy to production - if ops and product owner and technology manager approves
 - Use of Nexus
   - TBD
