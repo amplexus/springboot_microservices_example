@@ -3,13 +3,16 @@ An example project illustrating a simple microservices implementation
 
 Todo:
 - Integration testing:
+  - Run if: basic build and test succeeds and static code quality check succeeds
   - gradle command line supports target hostname argument for integration testing
-  - launches vm based on GCE immutable images to speed environment standup
-  - runs integration test against instantiated vm 
+  - launches VM
+  - deploy app to VM
+  - runs integration test against instantiated VM 
 - Performance testing:
   - gradle command line supports target hostname argument for performance testing
-  - launches vm based on GCE immutable images to speed environment standup
-  - runs performance test against instantiated vm 
+  - launches VM
+  - deploy app to VM
+  - runs performance test against instantiated VM 
 - Telstra workflow:
   - basic build and test
   - static code analysis - if basic build and test succeeds

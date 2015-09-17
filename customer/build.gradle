@@ -2,6 +2,10 @@ apply plugin: 'application'
 apply plugin: 'java'
 apply plugin: 'spring-boot'
 apply plugin: 'maven'
+// apply plugin: 'com.bmuschko.vagrant-base'
+apply plugin: 'com.bmuschko.vagrant' // the "convention" plugin - use this if you only have one vm to manage
+apply plugin: 'pmd'
+apply plugin: 'jacoco'
 
 group = 'org.amplexus.springboot.demo'
 version = '1.0.0-SNAPSHOT'
@@ -11,10 +15,11 @@ buildscript {
     maven {
       url "${nexusUrl}/content/groups/public"
     }
-    // jcenter()
+    jcenter() // needed because gradle-vagrant-plugin can't be found on any public repos that work with nexus...
   }
   dependencies { 
-   classpath 'org.springframework.boot:spring-boot-gradle-plugin:1.2.0.RELEASE'
+    classpath 'org.springframework.boot:spring-boot-gradle-plugin:1.2.0.RELEASE'
+    classpath 'com.bmuschko:gradle-vagrant-plugin:2.0'
   }
 }
 
@@ -68,6 +73,25 @@ uploadArchives {
     }
 }
 
+jacocoTestReport {
+    group = "Reporting"
+    description = "Generate Jacoco coverage reports after running tests."
+    additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
+}
+
+vagrant {
+    provider = "google"
+
+    boxDir = file('./')
+
+    environmentVariables {
+    }
+
+    installation {
+        validate = true
+    }
+}
+
 task integrationTest(type: Test) {
     testClassesDir = sourceSets.integrationTest.output.classesDir
     classpath = sourceSets.integrationTest.runtimeClasspath
@@ -79,4 +103,20 @@ task integrationTest(type: Test) {
 
 tasks.withType(Test) {
     reports.html.destination = file("${reporting.baseDir}/${name}")
+}
+
+import com.bmuschko.gradle.vagrant.tasks.Vagrant
+import com.bmuschko.gradle.vagrant.tasks.VagrantSsh
+
+task vagrantListsBoxes(type: Vagrant) {
+    description = 'Outputs a list of available Vagrant boxes.'
+    commands = ['box', 'list']
+}
+
+task vagrantEcho(type: VagrantSsh) {
+    description = 'Runs remote SSH command in Vagrant box.'
+    sshCommand = "echo 'hello'"
+
+    dependsOn vagrantUp
+    finalizedBy vagrantDestroy
 }
