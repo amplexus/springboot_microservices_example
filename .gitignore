@@ -1,5 +1,5 @@
 .*.swp
 */build/*
 */.gradle/*
-*/.vagrant/*
+.vagrant
 tags
