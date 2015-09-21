@@ -1,37 +1,78 @@
 # springboot_microservices_example
 An example project illustrating a simple microservices implementation
 
-Todo:
+DEPENDENCIES / REFERENCES:
+- Jenkins continuous deployment build pipeline:
+  - http://www.infoq.com/articles/orch-pipelines-jenkins
+- Gradle 2.7:
+  - Vagrant plugin: https://github.com/mitchellh/vagrant-google
+  - Packaging plugin: https://github.com/nebula-plugins/gradle-ospackage-plugin
+- Nexus 2.11.4:
+  - APT plugin: https://github.com/inventage/nexus-apt-plugin
+- Microservices and springboot:
+  - http://www.infoq.com/articles/boot-microservices
+  - https://spring.io/guides/gs/spring-boot/)
+
+BUILD PIPELINE:
+  - Basic build & test (authorisation roles: techmanager, dev, qa, ops, po)
+    - Compile (stop on fail)
+    - Publish static code analysis report (stop on code complexity threshold breach)
+    - Run unit tests (stop on fail)
+    - Publish test results report
+    - Publish test coverage report (stop on coverage threshold breach)
+  - Deploy to dev env (authorisation roles: techmanager, dev, qa, ops, po) (trigger modes: {auto-if-success(Basic build & test), push-if-success(Basic build & test)})
+    - Create VM if not existing (stop on fail)
+    - Stand up VM if not already up (stop on fail)
+    - Remove existing app packages from VM if currently deployed (stop on fail)
+    - Deploy app packages onto VM (stop on fail)
+    - Run smoke test (stop on fail)
+  - Dev integration test (authorisation roles: techmanager, dev, qa, ops, po) (trigger modes: push-if-success(Deploy to dev env))
+    - Verify VM is up (stop on fail)
+    - Verify correct / expected packages are deployed on VM (stop on fail)
+    - Run integration test against VM (stop on fail)
+    - Publish test results report
+    - Publish code coverage report
+  - Deploy to function test env (authorisation roles: qa, ops, po) (trigger modes: push-if-success(Dev integration test))
+    - Create VM if not existing (stop on fail)
+    - Stand up VM if not already up (stop on fail)
+    - Remove existing app packages from VM if currently deployed (stop on fail)
+    - Deploy app packages onto VM (stop on fail)
+    - Run smoke test (stop on fail)
+  - Function test (authorisation roles: qa, ops, po) (trigger modes: auto-if-success(Deploy to function test env), push-if-success(Deploy to function test env)))
+    - Verify VM is up (stop on fail)
+    - Verify correct / expected packages are deployed on VM (stop on fail)
+    - Run integration test against VM (stop on fail)
+    - Publish test results report
+    - Publish code coverage report
+  - Deploy to performance test env (authorisation roles: techmanager, dev, ops, po) (trigger modes: push-if-success(Function test))
+    - Create VM if not existing (stop on fail)
+    - Stand up VM if not already up (stop on fail)
+    - Remove existing app packages from VM if currently deployed (stop on fail)
+    - Deploy app packages onto VM (stop on fail)
+    - Run smoke test (stop on fail)
+  - Performance test (authorisation roles: techmanager, qa, ops, po) (trigger modes: auto-if-success(Deploy to performance test env), push-if-success(Deploy to performance test env)))
+    - Verify VM is up (stop on fail)
+    - Verify correct / expected packages are deployed on VM (stop on fail)
+    - Run performance test against VM (stop on fail - including if NFRs exceeded)
+    - Publish performance test report
+    - Publish performance profiling report
+  - Deploy to production env (authorisation roles: ops) (trigger modes: push-if-success-with-all-approvals(Performance test, {qa, ops, techmanager, po}))
+    - Create VM if not existing (stop on fail)
+    - Stand up VM if not already up (stop on fail)
+    - Remove existing app packages from VM if currently deployed (stop on fail)
+    - Deploy app packages onto VM (stop on fail)
+    - Run smoke test (stop on fail)
+
+TODO:
+- Fix nexus package generation
+  - none of the generated artifacts appear in the package list on nexus
+  - customer.deb might not appear in package list on nexus because of the "classifier" issue per https://github.com/inventage/nexus-apt-plugin
 - Integration testing:
-  - Run if: basic build and test succeeds and static code quality check succeeds
   - gradle command line supports target hostname argument for integration testing
-  - launches VM
-  - deploy app to VM
-  - runs integration test against instantiated VM 
 - Performance testing:
   - gradle command line supports target hostname argument for performance testing
-  - launches VM
-  - deploy app to VM
-  - runs performance test against instantiated VM 
-- Telstra workflow:
-  - basic build and test
-  - static code analysis - if basic build and test succeeds
-  - deploy to dev - if static code analysis succeeds
-  - run acceptance tests in dev - if deploy to dev succeeds
-  - run regression tests in dev - if acceptance tests succeed
-  - run performance tests in dev - if regression tests succeed
-  - deploy to SQI - if performance tests in dev succeed
-  - run regression test in SQI - if deploy to SQI succeeds
-  - deploy to UAT - if system tester approves regression tests in SQI
-  - run regression test in UAT - if deploy to UAT succeeds
-  - deploy to SVT - if QA and product owner approve integration test 
-  - run performance test in SVT - if deploy to SVT succeeds
-  - deploy to pre-prod - if performance engineer and technology manager approve performance tests
-  - deploy to production - if ops and product owner and technology manager approves
-- Use of Nexus
-  - TBD
 
-microservices:
+ABOUT MICROSERVICES:
 - responsible for single domain functionality vs soa handling cross domain functionality
 - distributed systems:
   - decompose a monolithic service infrastructure into individually scalable subsystems, organized through vertical slicing of the stack, and interconnected through a common transport.
@@ -45,4 +86,5 @@ microservices:
 
 Example:
 - SDF product catalogue REST api could cache products and / or be horizontally scaled across more servers
+
 - 

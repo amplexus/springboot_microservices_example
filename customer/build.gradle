@@ -6,9 +6,10 @@ apply plugin: 'maven'
 apply plugin: 'com.bmuschko.vagrant' // the "convention" plugin - use this if you only have one vm to manage
 apply plugin: 'pmd'
 apply plugin: 'jacoco'
+apply plugin: 'os-package'
 
 group = 'org.amplexus.springboot.demo'
-version = '1.0.0-SNAPSHOT'
+version = '1.0.1'
 
 buildscript {
   repositories {
@@ -20,6 +21,7 @@ buildscript {
   dependencies { 
     classpath 'org.springframework.boot:spring-boot-gradle-plugin:1.2.0.RELEASE'
     classpath 'com.bmuschko:gradle-vagrant-plugin:2.0'
+    classpath "com.netflix.nebula:gradle-ospackage-plugin:2.2.6"
   }
 }
 
@@ -48,15 +50,15 @@ configurations {
 
 dependencies {
   // long form: compile group: "org.springframework.boot", name: "spring-boot-starter-actuator", version: "..."
-  compile "org.springframework.boot:spring-boot-starter-actuator"
-  compile "org.springframework.boot:spring-boot-starter-web"
-  compile "org.springframework.boot:spring-boot-starter-data-jpa"
+  compile "org.springframework.boot:spring-boot-starter-actuator:1.2.0.RELEASE"
+  compile "org.springframework.boot:spring-boot-starter-web:1.2.0.RELEASE"
+  compile "org.springframework.boot:spring-boot-starter-data-jpa:1.2.0.RELEASE"
   compile 'com.h2database:h2:1.4.184'
   compile 'log4j:log4j:1.2.17'
   // testCompile 'junit:junit:4.11'
   testCompile 'org.springframework:spring-test:2.5'
   testCompile 'org.assertj:assertj-core:3.0.0'
-  testCompile "org.springframework.boot:spring-boot-starter-test" 
+  testCompile "org.springframework.boot:spring-boot-starter-test:1.2.0.RELEASE" 
   integrationTestCompile "org.springframework.boot:spring-boot-starter-test" 
 }
 
@@ -66,11 +68,68 @@ uploadArchives {
             repository(url: "${nexusUrl}/content/repositories/releases") {
                 authentication(userName: nexusUsername, password: nexusPassword)
             }
+            // pom.packaging = 'deb'
             snapshotRepository(url: "${nexusUrl}/content/repositories/snapshots") {
                 authentication(userName: nexusUsername, password: nexusPassword)
             }
         }
     }
+}
+
+def customerPackageFile = file('./build/distributions/customer_' + project.version + '-1_i386.deb')
+
+// artifacts {
+//     // archives customerPackageFile
+//     archives(customerPackageFile) {
+//         name 'customer'
+//         type 'deb'
+//         classifier 'all'
+//         builtBy buildDeb
+//     }
+// }
+
+
+// task is buildDeb
+ospackage {
+    packageName = project.name
+    version = project.version
+    release '1'
+    arch = I386
+    os = LINUX
+
+    // installUtils file('scripts/rpm/utils.sh')
+    // preInstall file('scripts/rpm/preInstall.sh')
+    // postInstall file('scripts/rpm/postInstall.sh')
+    // preUninstall 'touch /tmp/myfile'
+    // postUninstall file('scripts/rpm/postUninstall.sh')
+
+    // requires('qux')
+
+    into '/opt/springboot-microservice-demo/customer'
+
+    from(jar.outputs.files) {
+        into 'bin'
+    }
+    from(configurations.runtime) {
+        into 'lib'
+    }
+    from('lib') {
+        into 'lib'
+    }
+    // from('scripts') {
+    //     into 'bin'
+    //     exclude 'database'
+    //     fileMode = 0550
+    // }
+    from('src/main/resources') {
+        fileType CONFIG | NOREPLACE
+        into 'conf'
+    }
+}
+
+buildDeb {
+//    requires('bat', '1.0.1')
+//     link('/etc/init.d/foo', '/opt/foo/bin/foo.upstart')
 }
 
 jacocoTestReport {
@@ -81,8 +140,7 @@ jacocoTestReport {
 
 vagrant {
     provider = "google"
-
-    boxDir = file('./')
+    boxDir = file('../env/dev')
 
     environmentVariables {
     }
@@ -91,7 +149,6 @@ vagrant {
         validate = true
     }
 }
-
 task integrationTest(type: Test) {
     testClassesDir = sourceSets.integrationTest.output.classesDir
     classpath = sourceSets.integrationTest.runtimeClasspath
