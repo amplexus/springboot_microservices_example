@@ -1,5 +1,5 @@
 # Which version of the app to install...
-CFG_APP_VERSION = ENV['SPRINGBOOT_DEMO_CUSTOMER_APP_VERSION']
+CFG_APP_VERSION = ENV['PIPELINE_VERSION']
 
 # Correct timezone
 CFG_TZ = "Australia/Sydney"
