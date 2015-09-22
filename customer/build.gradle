@@ -143,6 +143,7 @@ vagrant {
     boxDir = file('../env/dev')
 
     environmentVariables {
+      variable 'CUSTOMER_VERSION', project.version
     }
 
     installation {
