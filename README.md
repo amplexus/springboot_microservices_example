@@ -15,16 +15,22 @@ DEPENDENCIES / REFERENCES:
 
 BUILD PIPELINE:
   - Basic build & test (authorisation roles: techmanager, dev, qa, ops, po)
+    - If "release" build
+      - Bump release number
+      - Generate a release tag
     - Compile (stop on fail)
     - Publish static code analysis report (stop on code complexity threshold breach)
     - Run unit tests (stop on fail)
     - Publish test results report
     - Publish test coverage report (stop on coverage threshold breach)
+    - If "release" build
+      - Generate package (deb/rpm etc) files
+      - Upload artifacts to Nexus
   - Deploy to dev env (authorisation roles: techmanager, dev, qa, ops, po) (trigger modes: {auto-if-success(Basic build & test), push-if-success(Basic build & test)})
     - Create VM if not existing (stop on fail)
     - Stand up VM if not already up (stop on fail)
     - Remove existing app packages from VM if currently deployed (stop on fail)
-    - Deploy app packages onto VM (stop on fail)
+    - Deploy app packages onto VM (stop on fail) --> sourced directly from Jenkins
     - Run smoke test (stop on fail)
   - Dev integration test (authorisation roles: techmanager, dev, qa, ops, po) (trigger modes: push-if-success(Deploy to dev env))
     - Verify VM is up (stop on fail)
@@ -36,7 +42,7 @@ BUILD PIPELINE:
     - Create VM if not existing (stop on fail)
     - Stand up VM if not already up (stop on fail)
     - Remove existing app packages from VM if currently deployed (stop on fail)
-    - Deploy app packages onto VM (stop on fail)
+    - Deploy app packages onto VM (stop on fail) --> Sourced from Nexus
     - Run smoke test (stop on fail)
   - Function test (authorisation roles: qa, ops, po) (trigger modes: auto-if-success(Deploy to function test env), push-if-success(Deploy to function test env)))
     - Verify VM is up (stop on fail)
@@ -48,7 +54,7 @@ BUILD PIPELINE:
     - Create VM if not existing (stop on fail)
     - Stand up VM if not already up (stop on fail)
     - Remove existing app packages from VM if currently deployed (stop on fail)
-    - Deploy app packages onto VM (stop on fail)
+    - Deploy app packages onto VM (stop on fail) --> Sourced from Nexus
     - Run smoke test (stop on fail)
   - Performance test (authorisation roles: techmanager, qa, ops, po) (trigger modes: auto-if-success(Deploy to performance test env), push-if-success(Deploy to performance test env)))
     - Verify VM is up (stop on fail)
@@ -60,8 +66,17 @@ BUILD PIPELINE:
     - Create VM if not existing (stop on fail)
     - Stand up VM if not already up (stop on fail)
     - Remove existing app packages from VM if currently deployed (stop on fail)
-    - Deploy app packages onto VM (stop on fail)
+    - Deploy app packages onto VM (stop on fail) --> Sourced from Nexus
     - Run smoke test (stop on fail)
+
+BUILD INSTRUCTIONS
+
+Normal Build
+- Launch Basic build & test job
+
+Release Build
+- Bump version number in gradle.properties
+- Launch Basic build & test job
 
 TODO:
 - Fix nexus package generation

@@ -1,5 +1,5 @@
 # Which version of the app to install...
-CFG_APP_VERSION = ENV['PIPELINE_VERSION']
+CFG_APP_VERSION = ENV['CUSTOMER_VERSION'A
 
 # Correct timezone
 CFG_TZ = "Australia/Sydney"
@@ -21,11 +21,13 @@ apt-get install openjdk-8-jre -y --no-upgrade
 rm -rf $TARGET_DIR
 mkdir -p $TARGET_DIR
 
-URL="${NEXUS_URL_PREFIX}/org/amplexus/springboot/demo/customer/#{CFG_APP_VERSION}/customer-#{CFG_APP_VERSION}.jar"
-curl -s "${URL}" -o ${TARGET_DIR}/customer.jar
-
+URL="${NEXUS_URL_PREFIX}/org/amplexus/springboot/demo/customer/#{CFG_APP_VERSION}/customer-#{CFG_APP_VERSION}.zip"
+curl -s "${URL}" -o ${TARGET_DIR}/customer-#{CFG_APP_VERSION}.zip
+cd ${TARGET_DIR}
+unzip customer-#{CFG_APP_VERSION}.zip
 echo "Starting customer microservice..."
-nohup java -jar ${TARGET_DIR}/customer.jar &
+cd ${TARGET_DIR}/customer-#{CFG_APP_VERSION}/bin
+nohup ./customer &
 
 # Give the app a few seconds to get ready
 sleep 20;

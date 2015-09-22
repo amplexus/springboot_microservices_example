@@ -9,7 +9,7 @@ apply plugin: 'jacoco'
 apply plugin: 'os-package'
 
 group = 'org.amplexus.springboot.demo'
-version = '1.0.1'
+version = customerVersion
 
 buildscript {
   repositories {
@@ -151,9 +151,14 @@ vagrant {
 }
 
 task devTest(type: Test) {
+    description = 'Creates a VM using Vagrant, then performs dev integration testing against the server "test.host" and port "test.port", before finally destroying it'
     testClassesDir = sourceSets.devTest.output.classesDir
     classpath = sourceSets.devTest.runtimeClasspath
     outputs.upToDateWhen { false } // Tell Gradle that the outputs of the devTest task should always be considered out of date so it is always executed.
+    systemProperties['test.host'] = System.getProperty("test.host", "dev-microservices-demo")
+    systemProperties['test.port'] = System.getProperty("test.port", "8080")
+    dependsOn vagrantUp
+    finalizedBy vagrantDestroy
 }
 
 // check.dependsOn devTest
@@ -161,8 +166,6 @@ task devTest(type: Test) {
 
 tasks.withType(Test) {
     reports.html.destination = file("${reporting.baseDir}/${name}")
-    systemProperties['test.host'] = System.getProperty("test.host", "localhost")
-    systemProperties['test.port'] = System.getProperty("test.port", "8080")
 }
 
 import com.bmuschko.gradle.vagrant.tasks.Vagrant
