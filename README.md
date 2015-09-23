@@ -1,17 +1,59 @@
 # springboot_microservices_example
 An example project illustrating a simple microservices implementation
 
-DEPENDENCIES / REFERENCES:
-- Jenkins continuous deployment build pipeline:
-  - http://www.infoq.com/articles/orch-pipelines-jenkins
-- Gradle 2.7:
-  - Vagrant plugin: https://github.com/mitchellh/vagrant-google
-  - Packaging plugin: https://github.com/nebula-plugins/gradle-ospackage-plugin
-- Nexus 2.11.4:
-  - APT plugin: https://github.com/inventage/nexus-apt-plugin
-- Microservices and springboot:
-  - http://www.infoq.com/articles/boot-microservices
-  - https://spring.io/guides/gs/spring-boot/)
+TODO:
+- Fix nexus debian package generation
+  - none of the generated artifacts appear in the package list on nexus
+  - customer.deb might not appear in package list on nexus because of the "classifier" issue per https://github.com/inventage/nexus-apt-plugin
+- Move devTest task to separate build stage
+- Create uatTest task based on current devTest task (i.e. pull artifact down from Nexus), and put in "Integration Testing" stage, but don't be destructive with VM...
+- Modify devTest task to pull artifact down from Jenkins instead of Nexus
+- Add performance testing stage illustrating JMeter usage
+
+SETUP:
+- Setup Google Cloud Engine
+  - Create Cloud Engine account
+  - Install gcloud on your desktop (assumes you're running Ubuntu):
+    # export CLOUD_SDK_REPO=cloud-sdk-`lsb_release -c -s`
+    # echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | sudo tee /etc/apt/sources.list.d/google-cloud-sdk.list
+    # curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+    # sudo apt-get update && sudo apt-get install google-cloud-sdk
+    # gcloud auth login
+  - Create Centos 6.7 based VM for running Jenkins build server (will need to open port 8080?):
+    # gcloud compute instances create "jenkins-vm" --zone "us-central1-a" --machine-type "g1-small" --image ubuntu-14-10 --network default --tags http-server https-server
+
+- Setup Your Continuous Integration VM:
+  - Install Java
+    # yum install java-1.8.0-openjdk
+  - Install Gradle
+    # gradle_version=2.3
+    # wget -N http://services.gradle.org/distributions/gradle-${gradle_version}-all.zip
+    # sudo unzip -foq gradle-${gradle_version}-all.zip -d /opt/gradle
+    # sudo ln -sfn gradle-${gradle_version} /opt/gradle/latest
+    # sudo printf "export GRADLE_HOME=/opt/gradle/latest\nexport PATH=\$PATH:\$GRADLE_HOME/bin" > /etc/profile.d/gradle.sh
+  - Install Vagrant
+    # wget https://dl.bintray.com/mitchellh/vagrant/vagrant_1.7.4_x86_64.rpm
+    # sudo rpm -i vagrant_1.7.4_x86_64.rpm
+    # vagrant plugin install vagrant-google
+    # vagrant box add gce https://github.com/mitchellh/vagrant-google/raw/master/google.box
+  - Install Jenkins:
+    # yum install jenkins
+  - Install Jenkins plugins
+    - Delivery Pipeline plugin: https://wiki.jenkins-ci.org/display/JENKINS/Delivery+Pipeline+Plugin
+    - Copy Artifact plugin: http://wiki.jenkins-ci.org/display/JENKINS/Copy+Artifact+Plugin
+    - Parameterised Trigger plugin: http://wiki.jenkins-ci.org/display/JENKINS/Copy+Artifact+Plugin
+    - Promoted Builds plugin: http://wiki.jenkins-ci.org/display/JENKINS/Promoted+Builds+Plugin
+  - Create ssh keys for jenkins
+    # sudo su - jenkins
+    # ssh-keygen -t rsa
+  - Add the SSH key to GCE:
+    - Go to console.developer.google.com: Compute -> Compute Engine -> Metadata section of the console, SSH Keys tab.
+    - Download your Google Cloud Engine service account JSON key
+    - https://console.developer.google.com/ -> APIs & Auth -> Credentials -> <Your Service Account> -> Generate New JSON Key
+    - Put the JSON file in a secure location - e.g. ~/.ssh/gce_service_account.json - and chmod 600 it...
+  - Install Sonatype Nexus
+    - Create a "ci" user who has permission to upload artifacts
+    - Provide "ci" user credentials to Gradle build script so it can upload artifacts
 
 BUILD PIPELINE:
   - Basic build & test (authorisation roles: techmanager, dev, qa, ops, po)
@@ -78,15 +120,6 @@ Release Build
 - Bump version number in gradle.properties
 - Launch Basic build & test job
 
-TODO:
-- Fix nexus package generation
-  - none of the generated artifacts appear in the package list on nexus
-  - customer.deb might not appear in package list on nexus because of the "classifier" issue per https://github.com/inventage/nexus-apt-plugin
-- Integration testing:
-  - gradle command line supports target hostname argument for integration testing
-- Performance testing:
-  - gradle command line supports target hostname argument for performance testing
-
 ABOUT MICROSERVICES:
 - responsible for single domain functionality vs soa handling cross domain functionality
 - distributed systems:
@@ -101,5 +134,17 @@ ABOUT MICROSERVICES:
 
 Example:
 - SDF product catalogue REST api could cache products and / or be horizontally scaled across more servers
+
+REFERENCES:
+- Jenkins continuous deployment build pipeline:
+  - http://www.infoq.com/articles/orch-pipelines-jenkins
+- Gradle 2.7:
+  - Vagrant plugin: https://github.com/mitchellh/vagrant-google
+  - Packaging plugin: https://github.com/nebula-plugins/gradle-ospackage-plugin
+- Nexus 2.11.4:
+  - APT plugin: https://github.com/inventage/nexus-apt-plugin
+- Microservices and springboot:
+  - http://www.infoq.com/articles/boot-microservices
+  - https://spring.io/guides/gs/spring-boot/)
 
 - 

@@ -143,6 +143,7 @@ vagrant {
     boxDir = file('../env/dev')
 
     environmentVariables {
+      // The Vagrantfile needs to know the version of the app being deployed/tested, and this is passed as an environment variable 'CUSTOMER_VERSION'
       variable 'CUSTOMER_VERSION', project.version
     }
 
