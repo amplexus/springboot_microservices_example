@@ -43,6 +43,7 @@ SETUP:
     - Copy Artifact plugin: http://wiki.jenkins-ci.org/display/JENKINS/Copy+Artifact+Plugin
     - Parameterised Trigger plugin: http://wiki.jenkins-ci.org/display/JENKINS/Copy+Artifact+Plugin
     - Promoted Builds plugin: http://wiki.jenkins-ci.org/display/JENKINS/Promoted+Builds+Plugin
+    - Release plugin: https://wiki.jenkins-ci.org/display/JENKINS/Release+Plugin
   - Create ssh keys for jenkins
     # sudo su - jenkins
     # ssh-keygen -t rsa
@@ -55,7 +56,7 @@ SETUP:
     - Create a "ci" user who has permission to upload artifacts
     - Provide "ci" user credentials to Gradle build script so it can upload artifacts
 
-BUILD PIPELINE:
+JENKINS BUILD PIPELINE:
   - Basic build & test (authorisation roles: techmanager, dev, qa, ops, po)
     - If "release" build
       - Bump release number
@@ -111,14 +112,40 @@ BUILD PIPELINE:
     - Deploy app packages onto VM (stop on fail) --> Sourced from Nexus
     - Run smoke test (stop on fail)
 
-BUILD INSTRUCTIONS
+GRADLE BUILD COMMANDS
 
-Normal Build
-- Launch Basic build & test job
+- "Basic Build & Test" stage
+  - clean: delete build directory
+  - build: compile code plus unit tests, generate package, execute unit tests, assemble artifacts and generate static code analysis report
+  // - localSmokeTest; run smoke tests against localhost:8080
+  // - localIntegrationTest; run integration tests against localhost:8080
+  // - localPerformanceTest; run load tests against localhost:8080
+  - jacocoTestReport; generates a code coverage report
+  - javadoc: generate javadocs
+  - if "release build"
+  // - bumpVersion
+  // - tagBuild
+    - uploadArchives: upload package to Nexus
 
-Release Build
-- Bump version number in gradle.properties
-- Launch Basic build & test job
+- "Deploy To Dev" stage
+  - devDeploy: stands up the dev VM (if not already up), installs app from Nexus, then launches app (all via Vagrant)
+  // - devSmokeTest: basic sanity check to ensure app is working
+
+- "Dev Integration Test" stage
+  - devIntegrationTest
+
+- "Dev Performance Test" stage
+  - devPerformanceTest
+
+- "Deploy to SQI" stage
+  - sqiDeploy: stands up the dev VM (if not already up), installs app from Nexus, then launches app
+  // - sqiSmokeTest: basic sanity check to ensure app is working
+
+- "SQI Integration Test" stage
+  - sqiIntegrationTest
+
+- "SQI Performance Test" stage
+  // - sqiPerformanceTest
 
 ABOUT MICROSERVICES:
 - responsible for single domain functionality vs soa handling cross domain functionality

@@ -51,7 +51,7 @@ Vagrant.configure("2") do |config|
     google.google_client_email = ENV['GOOGLE_CLIENT_EMAIL']
     google.google_json_key_location = ENV['HOME'] + "/.ssh/gce_vagrant.json"
 
-    google.name = "prod-microservices-demo"
+    google.name = "uat-microservices-demo"
 
     google.tags = ['http-server', 'https-server'] # these tags will trigger opening of ports 80 and 443
 

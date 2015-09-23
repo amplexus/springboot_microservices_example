@@ -2,8 +2,8 @@ apply plugin: 'application'
 apply plugin: 'java'
 apply plugin: 'spring-boot'
 apply plugin: 'maven'
-// apply plugin: 'com.bmuschko.vagrant-base'
-apply plugin: 'com.bmuschko.vagrant' // the "convention" plugin - use this if you only have one vm to manage
+apply plugin: 'com.bmuschko.vagrant-base'
+// apply plugin: 'com.bmuschko.vagrant' // the "convention" plugin - use this if you only have one vm to manage
 apply plugin: 'pmd'
 apply plugin: 'jacoco'
 apply plugin: 'os-package'
@@ -33,7 +33,7 @@ repositories {
 }
 
 sourceSets {
-  devTest {
+  integrationTest {
     java {
       compileClasspath += main.output + test.output
       runtimeClasspath += main.output + test.output
@@ -44,8 +44,8 @@ sourceSets {
 }
 
 configurations {
-  devTestCompile.extendsFrom testCompile
-  devTestRuntime.extendsFrom testRuntime
+  integrationTestCompile.extendsFrom testCompile
+  integrationTestRuntime.extendsFrom testRuntime
 }
 
 dependencies {
@@ -59,7 +59,7 @@ dependencies {
   testCompile 'org.springframework:spring-test:2.5'
   testCompile 'org.assertj:assertj-core:3.0.0'
   testCompile "org.springframework.boot:spring-boot-starter-test:1.2.0.RELEASE" 
-  devTestCompile "org.springframework.boot:spring-boot-starter-test" 
+  integrationTestCompile "org.springframework.boot:spring-boot-starter-test" 
 }
 
 uploadArchives {
@@ -78,15 +78,15 @@ uploadArchives {
 
 def customerPackageFile = file('./build/distributions/customer_' + project.version + '-1_i386.deb')
 
-// artifacts {
-//     // archives customerPackageFile
-//     archives(customerPackageFile) {
-//         name 'customer'
-//         type 'deb'
-//         classifier 'all'
-//         builtBy buildDeb
-//     }
-// }
+artifacts {
+    // archives customerPackageFile
+    archives(customerPackageFile) {
+        name 'customer'
+        type 'deb'
+        classifier 'all'
+         builtBy buildDeb
+    }
+}
 
 
 // task is buildDeb
@@ -140,7 +140,6 @@ jacocoTestReport {
 
 vagrant {
     provider = "google"
-    boxDir = file('../env/dev')
 
     environmentVariables {
       // The Vagrantfile needs to know the version of the app being deployed/tested, and this is passed as an environment variable 'CUSTOMER_VERSION'
@@ -152,36 +151,109 @@ vagrant {
     }
 }
 
-task devTest(type: Test) {
-    description = 'Creates a VM using Vagrant, then performs dev integration testing against the server "test.host" and port "test.port", before finally destroying it'
-    testClassesDir = sourceSets.devTest.output.classesDir
-    classpath = sourceSets.devTest.runtimeClasspath
-    outputs.upToDateWhen { false } // Tell Gradle that the outputs of the devTest task should always be considered out of date so it is always executed.
+task devIntegrationTest(type: Test) {
+    description = 'Performs dev integration testing against the server "test.host" and port "test.port"'
+    testClassesDir = sourceSets.integrationTest.output.classesDir
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    outputs.upToDateWhen { false } // Tell Gradle that the outputs of the integrationTest task should always be considered out of date so it is always executed.
     systemProperties['test.host'] = System.getProperty("test.host", "dev-microservices-demo")
     systemProperties['test.port'] = System.getProperty("test.port", "8080")
-    dependsOn vagrantUp
-    finalizedBy vagrantDestroy
 }
 
-// check.dependsOn devTest
-// devTest.mustRunAfter test
+task sqiIntegrationTest(type: Test) {
+    description = 'Performs SQI integration testing against the server "test.host" and port "test.port"'
+    testClassesDir = sourceSets.integrationTest.output.classesDir
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    outputs.upToDateWhen { false } // Tell Gradle that the outputs of the integrationTest task should always be considered out of date so it is always executed.
+    systemProperties['test.host'] = System.getProperty("test.host", "sqi-microservices-demo")
+    systemProperties['test.port'] = System.getProperty("test.port", "8080")
+}
+
+task uatIntegrationTest(type: Test) {
+    description = 'Performs UAT integration testing against the server "test.host" and port "test.port"'
+    testClassesDir = sourceSets.integrationTest.output.classesDir
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    outputs.upToDateWhen { false } // Tell Gradle that the outputs of the integrationTest task should always be considered out of date so it is always executed.
+    systemProperties['test.host'] = System.getProperty("test.host", "uat-microservices-demo")
+    systemProperties['test.port'] = System.getProperty("test.port", "8080")
+}
+
+task svtIntegrationTest(type: Test) {
+    description = 'Performs SVT integration testing against the server "test.host" and port "test.port"'
+    testClassesDir = sourceSets.integrationTest.output.classesDir
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    outputs.upToDateWhen { false } // Tell Gradle that the outputs of the integrationTest task should always be considered out of date so it is always executed.
+    systemProperties['test.host'] = System.getProperty("test.host", "svt-microservices-demo")
+    systemProperties['test.port'] = System.getProperty("test.port", "8080")
+}
+
+task prodIntegrationTest(type: Test) {
+    description = 'Performs prod integration testing against the server "test.host" and port "test.port"'
+    testClassesDir = sourceSets.integrationTest.output.classesDir
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    outputs.upToDateWhen { false } // Tell Gradle that the outputs of the integrationTest task should always be considered out of date so it is always executed.
+    systemProperties['test.host'] = System.getProperty("test.host", "prod-microservices-demo")
+    systemProperties['test.port'] = System.getProperty("test.port", "8080")
+}
+
+import com.bmuschko.gradle.vagrant.tasks.VagrantUp
+import com.bmuschko.gradle.vagrant.tasks.VagrantHalt
+import com.bmuschko.gradle.vagrant.tasks.VagrantDestroy
+
+task devDeploy(type: VagrantUp) {
+    description = 'Starts a dev integration testing VM running on Google Cloud Engine and deploys the customer microservices app on it.'
+    group = 'Google Cloud Engine VM'
+    boxDir = file('../env/dev')
+}
+
+task devHalt(type: VagrantHalt) {
+    description = 'Stops a dev integration testing VM running on Google Cloud Engine.'
+    group = 'Google Cloud Engine VM'
+    boxDir = file('../env/dev')
+}
+
+task devDestroy(type: VagrantDestroy) {
+    description = 'Destroys a dev integration testing VM running on Google Cloud Engine.'
+    group = 'Google Cloud Engine VM'
+    boxDir = file('../env/dev')
+}
+
+task sqiDeploy(type: VagrantUp) {
+    description = 'Starts an SQI testing VM running on Google Cloud Engine and deploys the customer microservices app on it.'
+    group = 'Google Cloud Engine VM'
+    boxDir = file('../env/sqi')
+}
+
+task sqiHalt(type: VagrantHalt) {
+    description = 'Stops an SQI testing VM running on Google Cloud Engine.'
+    group = 'Google Cloud Engine VM'
+    boxDir = file('../env/sqi')
+}
+
+task sqiDestroy(type: VagrantDestroy) {
+    description = 'Destroys an SQI testing VM running on Google Cloud Engine.'
+    group = 'Google Cloud Engine VM'
+    boxDir = file('../env/sqi')
+}
+
+task uatDeploy(type: VagrantUp) {
+    description = 'Starts a UAT testing VM running on Google Cloud Engine and deploys the customer microservices app on it.'
+    group = 'Google Cloud Engine VM'
+    boxDir = file('../env/uat')
+}
+
+task svtDeploy(type: VagrantUp) {
+    description = 'Starts an SVT testing VM running on Google Cloud Engine and deploys the customer microservices app on it.'
+    group = 'Google Cloud Engine VM'
+    boxDir = file('../env/svt')
+}
+
+task prodDeploy(type: VagrantUp) {
+    description = 'Starts the production VM running on Google Cloud Engine and deploys the customer microservices app on it.'
+    group = 'Google Cloud Engine VM'
+    boxDir = file('../env/prod')
+}
 
 tasks.withType(Test) {
     reports.html.destination = file("${reporting.baseDir}/${name}")
-}
-
-import com.bmuschko.gradle.vagrant.tasks.Vagrant
-import com.bmuschko.gradle.vagrant.tasks.VagrantSsh
-
-task vagrantListsBoxes(type: Vagrant) {
-    description = 'Outputs a list of available Vagrant boxes.'
-    commands = ['box', 'list']
-}
-
-task vagrantEcho(type: VagrantSsh) {
-    description = 'Runs remote SSH command in Vagrant box.'
-    sshCommand = "echo 'hello'"
-
-    dependsOn vagrantUp
-    finalizedBy vagrantDestroy
 }
