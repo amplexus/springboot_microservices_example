@@ -88,8 +88,6 @@ artifacts {
     }
 }
 
-
-// task is buildDeb
 ospackage {
     packageName = project.name
     version = project.version
@@ -143,7 +141,8 @@ vagrant {
 
     environmentVariables {
       // The Vagrantfile needs to know the version of the app being deployed/tested, and this is passed as an environment variable 'CUSTOMER_VERSION'
-      variable 'CUSTOMER_VERSION', project.version
+      // Note that we can deploy a different version to that configured in gradle.properties by setting the deployCustomerVersion parameter
+      variable 'CUSTOMER_VERSION', System.getProperty("deployCustomerVersion", project.version)
     }
 
     installation {

@@ -173,5 +173,3 @@ REFERENCES:
 - Microservices and springboot:
   - http://www.infoq.com/articles/boot-microservices
   - https://spring.io/guides/gs/spring-boot/)
-
-- 
