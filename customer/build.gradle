@@ -3,13 +3,13 @@ apply plugin: 'java'
 apply plugin: 'spring-boot'
 apply plugin: 'maven'
 apply plugin: 'com.bmuschko.vagrant-base'
-// apply plugin: 'com.bmuschko.vagrant' // the "convention" plugin - use this if you only have one vm to manage
 apply plugin: 'pmd'
 apply plugin: 'jacoco'
 apply plugin: 'os-package'
+apply plugin: 'jmeter'
 
 group = 'org.amplexus.springboot.demo'
-version = customerVersion
+version = customerVersion // see gradle.properties
 
 buildscript {
   repositories {
@@ -22,6 +22,7 @@ buildscript {
     classpath 'org.springframework.boot:spring-boot-gradle-plugin:1.2.0.RELEASE'
     classpath 'com.bmuschko:gradle-vagrant-plugin:2.0'
     classpath "com.netflix.nebula:gradle-ospackage-plugin:2.2.6"
+    classpath 'com.github.kulya:jmeter-gradle-plugin:1.3.4-2.13'
   }
 }
 
@@ -29,7 +30,6 @@ repositories {
   maven {
     url "${nexusUrl}/content/groups/public"
   }
-  // jcenter()
 }
 
 sourceSets {
@@ -41,11 +41,21 @@ sourceSets {
     }
     resources.srcDir file('src/integration-test/resources')
   }
+  jmeterSamplers {
+    java {
+      srcDir file('src/load-test/java')
+      compileClasspath += main.output
+      runtimeClasspath += main.output
+    }
+    resources.srcDir file('src/load-test/resources')
+  }
 }
 
 configurations {
   integrationTestCompile.extendsFrom testCompile
   integrationTestRuntime.extendsFrom testRuntime
+  jmeterSamplersCompile.extendsFrom compile
+  jmeterSamplersRuntime.extendsFrom runtime
 }
 
 dependencies {
@@ -60,6 +70,7 @@ dependencies {
   testCompile 'org.assertj:assertj-core:3.0.0'
   testCompile "org.springframework.boot:spring-boot-starter-test:1.2.0.RELEASE" 
   integrationTestCompile "org.springframework.boot:spring-boot-starter-test" 
+  jmeterSamplersCompile "org.apache.jmeter:ApacheJMeter_java:2.6"
 }
 
 uploadArchives {
@@ -87,6 +98,20 @@ artifacts {
          builtBy buildDeb
     }
 }
+
+jacocoTestReport {
+    group = "Reporting"
+    description = "Generate Jacoco coverage reports after running tests."
+    additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
+}
+
+tasks.withType(Test) {
+    reports.html.destination = file("${reporting.baseDir}/${name}")
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// PACKAGE GENERATION
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ospackage {
     packageName = project.name
@@ -130,27 +155,12 @@ buildDeb {
 //     link('/etc/init.d/foo', '/opt/foo/bin/foo.upstart')
 }
 
-jacocoTestReport {
-    group = "Reporting"
-    description = "Generate Jacoco coverage reports after running tests."
-    additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
-}
-
-vagrant {
-    provider = "google"
-
-    environmentVariables {
-      // The Vagrantfile needs to know the version of the app being deployed/tested, and this is passed as an environment variable 'CUSTOMER_VERSION'
-      // Note that we can deploy a different version to that configured in gradle.properties by setting the deployCustomerVersion parameter
-      variable 'CUSTOMER_VERSION', System.getProperty("deployCustomerVersion", project.version)
-    }
-
-    installation {
-        validate = true
-    }
-}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// FUNCTIONAL TESTING
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 task devIntegrationTest(type: Test) {
+    group = 'Integration Testing'
     description = 'Performs dev integration testing against the server "test.host" and port "test.port"'
     testClassesDir = sourceSets.integrationTest.output.classesDir
     classpath = sourceSets.integrationTest.runtimeClasspath
@@ -160,6 +170,7 @@ task devIntegrationTest(type: Test) {
 }
 
 task sqiIntegrationTest(type: Test) {
+    group = 'Integration Testing'
     description = 'Performs SQI integration testing against the server "test.host" and port "test.port"'
     testClassesDir = sourceSets.integrationTest.output.classesDir
     classpath = sourceSets.integrationTest.runtimeClasspath
@@ -169,6 +180,7 @@ task sqiIntegrationTest(type: Test) {
 }
 
 task uatIntegrationTest(type: Test) {
+    group = 'Integration Testing'
     description = 'Performs UAT integration testing against the server "test.host" and port "test.port"'
     testClassesDir = sourceSets.integrationTest.output.classesDir
     classpath = sourceSets.integrationTest.runtimeClasspath
@@ -178,6 +190,7 @@ task uatIntegrationTest(type: Test) {
 }
 
 task svtIntegrationTest(type: Test) {
+    group = 'Integration Testing'
     description = 'Performs SVT integration testing against the server "test.host" and port "test.port"'
     testClassesDir = sourceSets.integrationTest.output.classesDir
     classpath = sourceSets.integrationTest.runtimeClasspath
@@ -187,12 +200,120 @@ task svtIntegrationTest(type: Test) {
 }
 
 task prodIntegrationTest(type: Test) {
+    group = 'Integration Testing'
     description = 'Performs prod integration testing against the server "test.host" and port "test.port"'
     testClassesDir = sourceSets.integrationTest.output.classesDir
     classpath = sourceSets.integrationTest.runtimeClasspath
     outputs.upToDateWhen { false } // Tell Gradle that the outputs of the integrationTest task should always be considered out of date so it is always executed.
     systemProperties['test.host'] = System.getProperty("test.host", "prod-microservices-demo")
     systemProperties['test.port'] = System.getProperty("test.port", "8080")
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// PERFORMANCE TESTING
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+import com.github.kulya.gradle.plugins.jmeter.JmeterRunTask
+
+task devPerformanceTest(type: JmeterRunTask) {
+    group = 'Performance Testing'
+    description = 'Performs performance tests against the dev server'
+    srcDir = file("src/load-test/jmeter")
+    jmeterPropertyFile = file("src/load-test/resources/jmeter.properties")
+    jmeterUserProperties = ["server=" + System.getProperty('test.host', "dev-microservices-demo"), "port=" + System.getProperty("test.port", "8080")]
+    maxHeapSize = '256m'
+    enableReports = true
+    reportDir = file "$project.buildDir/jmeter-report"
+    reportPostfix = '-report.html'
+    remote = false
+    outputs.upToDateWhen { false } // Tell Gradle that the outputs of this task should always be considered out of date so it is always executed.
+}
+
+task sqiPerformanceTest(type: JmeterRunTask) {
+    group = 'Performance Testing'
+    description = 'Performs performance tests against the sqi server'
+    srcDir = file("src/load-test/jmeter")
+    jmeterPropertyFile = file("src/load-test/resources/jmeter.properties")
+    jmeterUserProperties = ["server=" + System.getProperty('test.host', "sqi-microservices-demo"), "port=" + System.getProperty("test.port", "8080")]
+    maxHeapSize = '256m'
+    enableReports = true
+    reportDir = file "$project.buildDir/jmeter-report"
+    reportPostfix = '-report.html'
+    remote = false
+    outputs.upToDateWhen { false } // Tell Gradle that the outputs of this task should always be considered out of date so it is always executed.
+}
+
+task uatPerformanceTest(type: JmeterRunTask) {
+    group = 'Performance Testing'
+    description = 'Performs performance tests against the uat server'
+    srcDir = file("src/load-test/jmeter")
+    jmeterPropertyFile = file("src/load-test/resources/jmeter.properties")
+    jmeterUserProperties = ["server=" + System.getProperty('test.host', "uat-microservices-demo"), "port=" + System.getProperty("test.port", "8080")]
+    maxHeapSize = '256m'
+    enableReports = true
+    reportDir = file "$project.buildDir/jmeter-report"
+    reportPostfix = '-report.html'
+    remote = false
+    outputs.upToDateWhen { false } // Tell Gradle that the outputs of this task should always be considered out of date so it is always executed.
+}
+
+task svtPerformanceTest(type: JmeterRunTask) {
+    group = 'Performance Testing'
+    description = 'Performs performance tests against the svt server'
+    srcDir = file("src/load-test/jmeter")
+    jmeterPropertyFile = file("src/load-test/resources/jmeter.properties")
+    jmeterUserProperties = ["server=" + System.getProperty('test.host', "svt-microservices-demo"), "port=" + System.getProperty("test.port", "8080")]
+    maxHeapSize = '256m'
+    enableReports = true
+    reportDir = file "$project.buildDir/jmeter-report"
+    reportPostfix = '-report.html'
+    remote = false
+    outputs.upToDateWhen { false } // Tell Gradle that the outputs of this task should always be considered out of date so it is always executed.
+}
+
+jmeterRun.configure {
+    srcDir = file("src/load-test/jmeter")
+    jmeterPropertyFile = file("src/load-test/resources/jmeter.properties")
+    maxHeapSize = '256m'
+}
+
+task archiveJMeterSamplers(type: Jar) {
+    description = 'Create the JMeter samplers archive'
+    group = 'Performance Testing'
+    archiveName = "jmeter-samplers.jar"
+    destinationDir = file("${buildDir}/libs")
+    from(sourceSets.jmeterSamplers.output) {
+        include "**"
+    }
+}
+
+task installJMeterSamplers(type: Copy, dependsOn: 'archiveJMeterSamplers') {
+    description = 'Installs the JMeter samplers archive in the JMeter lib/ext folder'
+    group = 'Performance Testing'
+    from "${buildDir}/libs/"
+    into "${buildDir}/jmeter/lib/ext/"
+    include "jmeter-samplers.jar"
+}
+
+jmeterRun.dependsOn installJMeterSamplers
+jmeterEditor.dependsOn installJMeterSamplers
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VM PROVISIONING AND APPLICATION DEPLOYMENT
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+vagrant {
+    provider = "google"
+
+    environmentVariables {
+      // The Vagrantfile needs to know the version of the app being deployed/tested, and this is passed as an environment variable 'CUSTOMER_VERSION'
+      // Note that we can deploy a different version (via Nexus) to that configured in gradle.properties by setting the deployCustomerVersion parameter
+      variable 'CUSTOMER_VERSION', System.getProperty("deployCustomerVersion", project.version)
+    }
+
+    installation {
+        validate = true
+    }
 }
 
 import com.bmuschko.gradle.vagrant.tasks.VagrantUp
@@ -251,8 +372,4 @@ task prodDeploy(type: VagrantUp) {
     description = 'Starts the production VM running on Google Cloud Engine and deploys the customer microservices app on it.'
     group = 'Google Cloud Engine VM'
     boxDir = file('../env/prod')
-}
-
-tasks.withType(Test) {
-    reports.html.destination = file("${reporting.baseDir}/${name}")
 }
