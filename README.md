@@ -129,23 +129,23 @@ GRADLE BUILD COMMANDS
 
 - "Deploy To Dev" stage
   - devDeploy: stands up the dev VM (if not already up), installs app from Nexus, then launches app (all via Vagrant)
-  // - devSmokeTest: basic sanity check to ensure app is working
+  - devSmokeTest: basic sanity check to ensure app is working
 
 - "Dev Integration Test" stage
   - devIntegrationTest
 
-- "Dev Performance Test" stage
-  - devPerformanceTest
-
 - "Deploy to SQI" stage
   - sqiDeploy: stands up the dev VM (if not already up), installs app from Nexus, then launches app
-  // - sqiSmokeTest: basic sanity check to ensure app is working
+  - sqiSmokeTest: basic sanity check to ensure app is working
 
 - "SQI Integration Test" stage
   - sqiIntegrationTest
 
-- "SQI Performance Test" stage
-  // - sqiPerformanceTest
+- "UAT Integration Test" stage
+  - uatIntegrationTest
+
+- "SVT Performance Test" stage
+  - svtPerformanceTest
 
 ABOUT MICROSERVICES:
 - responsible for single domain functionality vs soa handling cross domain functionality
