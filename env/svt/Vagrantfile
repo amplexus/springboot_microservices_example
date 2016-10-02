@@ -7,7 +7,7 @@ CFG_TZ = "Australia/Sydney"
 provisioning_script = <<SCRIPT
 #!/bin/bash
 
-NEXUS_URL_PREFIX="http://craigiebabe.net:9081/nexus/content/repositories/releases"
+NEXUS_URL_PREFIX="http://craigiebabe.net:8081/nexus/content/repositories/releases"
 TARGET_DIR=/opt/springboot-microservices-demo/customer
 
 echo "#{CFG_TZ}" > /etc/timezone    
